@@ -1,0 +1,136 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome file</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__html"><h1 id="quotation-tracking--salesforce"><strong>Quotation Tracking | Salesforce</strong></h1>
+<p>Dentro del presente documento se redacta a detalle la justificación del diseño expuesto por la cédula de ASO, para el equipo de Refactor N2 Wibe</p>
+<p><strong>Contenido</strong></p>
+<ul>
+<li><a href="#definici%C3%B3n">Definicion</a>
+<ul>
+<li><a href="#uri-parameters">URI Parameters</a></li>
+<li><a href="#vehicle">Customer</a></li>
+<li><a href="#cotizacion">Cotizacion</a></li>
+<li></li>
+</ul>
+</li>
+<li><a href="#flujo">Flujo</a></li>
+<li><a href="#conclusi%C3%B3n">Conclusión</a></li>
+</ul>
+<h2 id="definición">Definición</h2>
+<p>La definición del <a href="https://catalogs.platform.bbva.com/apicatalog/business/apis/apis-insurances-vehicleinsurances/versions/mx-0.55.0/resources/vehicleinsurancesapivehicleinsurancesquotationsv0/">endpoint</a> existente <strong>NO</strong> presenta algún tipo de compatibilidad con los requerimientos solicitados en la solución expedida por el equipo de <em>Refactor</em>.</p>
+<p>Estas incompatibilidades darían pie a múltiples situaciones, que dependiendo de lo complejas que sean, podrían desembocar en errores críticos de sistema.</p>
+<p>A <em>grosso</em> modo <em>(y por mencionar algunas)</em>, las incompatibilidades son las siguientes:</p>
+<h3 id="uri-parameters"><strong>URI Parameters</strong></h3>
+<ol>
+<li>Para poder crear una cotización, es necesario tener una cuenta registrada en los sistemas de Salesforce, es por ello que para poder localizar o identificar el recurso es necesario <em>(siguiendo los estándares de REST, claro)</em> ubicar dentro de la URI del servicio, el URI parameter correspondiente.</li>
+</ol>
+
+<table>
+<thead>
+<tr>
+<th>API Productivo</th>
+<th>API Salesforce</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="img/vehicle-insurances-quotations.png" alt="api-actual"></td>
+<td><img src="img/salesforce-participants-quotations.png" alt="api-salesforce"></td>
+</tr>
+</tbody>
+</table><blockquote>
+<p><em>Primordialmente, no podríamos simplemente agregar el parámetro ya que la URI se vería enteramente modificada, significando eso un cambio no retrocompatible, además de que ese dato únicamente lo manejan los sitemas de Salesforce (el id de participante), los demás clientes del API no podrían hacer uso de este servicio, debido a que no cuentan con este <strong>id</strong> al momento de querer consumir el servicio</em></p>
+</blockquote>
+<h3 id="vehicle"><strong>Vehicle</strong></h3>
+<ol>
+<li>La definición del objeto vehicle dentro de los datos que viajan hacia el recurso de la cotización <strong>NO</strong> es requerida.</li>
+</ol>
+
+<table>
+<thead>
+<tr>
+<th>API Productivo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="img/vehicle-insurances-quotations.png" alt="api-actual"></td>
+</tr>
+</tbody>
+</table><blockquote>
+<p><em>El API actual, debe enviar en cada solicitud datos sobre el vehículo, esto no podría ser replicado por Salesforce, debido justamente a que en su diseño estos datos no son requeridos, y al ser una propiedad de carácter obligatorio en el API productivo, estaríamos obligando a Salesforce a que nos envíe información que no poseen en ese momento del uso del servicio, nuevamente generando acciones bloqueantes para usarlo</em></p>
+</blockquote>
+<h3 id="cotizacion"><strong>Cotizacion</strong></h3>
+<ol>
+<li>La definición de los datos que usa el recurso cotizacion entre el API actual y el diseñado para Salesforce son altamente incompatibles, esto es por los requisitos de propiedades de cada unos de las API mencionadas.</li>
+</ol>
+
+<table>
+<thead>
+<tr>
+<th>API Productivo</th>
+<th>API Salesforce</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="img/vehicle-insurances-quotations-body.png" alt="api-actual"></td>
+<td><img src="img/salesforce-participants-quotations-body.png" alt="api-salesforce"></td>
+</tr>
+</tbody>
+</table><blockquote>
+<p><em>Dentro del API actual se encuentra las siguientes propiedades de carácter <strong>obligatorio</strong></em>:</p>
+<ul>
+<li><em>offerId</em></li>
+<li><em>relatedPolicy</em></li>
+<li><em>certificates</em></li>
+</ul>
+</blockquote>
+<p>Este conjunto de datos no podría ser informado por Salesforce, justamente porque no cuenta con los mecanismos para recopilarlos, mucho menos obligaríamos a enviar datos sin ningun tipo de sentido en el proceso, los llamados datos “dummies”, esto representa una pésima práctica.</p>
+<blockquote>
+<p><em>Dentro del API de Salsesforce se encuentra las siguientes propiedades de carácter <strong>obligatorio</strong></em>:</p>
+<ul>
+<li><em>folio</em></li>
+<li><em>status</em></li>
+<li><em>attentionType</em></li>
+<li><em>isHolder</em></li>
+<li>organizationSalesforce</li>
+</ul>
+</blockquote>
+<p>Se presenta el mismo caso anterior, solo que ahora el API productivo sería el que no pudiera enviar estos datos requeridos por Salesforce; los clientes del API actual, <strong>NO</strong> cuentan con esa información, esa información es exclusiva del equipo de <em>Refactor</em>.</p>
+<p>Como se puede observar, múltiples son los escenarios en los que no tendría algún tipo de sentido enviar o declarar estas propiedades nuevas o existentes en solicitudes hacia el servicio, de ser así, representaría una acción irrelevante o en el peor de los casos, una acción bloqueante para los clientes que interactúen con el servicio.</p>
+<h2 id="flujo">Flujo</h2>
+<p>Dentro de la solución del equipo de <em>Refactor</em> se plantea una <strong>cotización</strong>, como un <strong>proceso de negocio</strong>, no como un recurso <strong>exclusivamente</strong> aislado.</p>
+<p>Esto quiere decir que para <em>Salesforce</em>, una cotización, <strong>sí</strong>, es un recurso aislado, pero incompleto <em>(por eso lo de exclusivo)</em>, lo que lo complementa serían los recursos adicionales de <strong>participants</strong> (customer) y <strong>vehicles</strong> (vehículo).</p>
+<p>Para hacerlo un poco más digerible, la cotización es un proceso en el que se interactúa con múltiples recursos, y todos funcionan de manera compuesta para lograr un fin en particular, ser la información que complete una <strong>cotización</strong>, por lo que la información de los <strong>datos inherentes</strong> a la cotización si que viajarían dentro de las peticiones del servicio diseñado (requests), pero, únicamente los <strong>datos inherentes</strong> a la cotización (fecha de creación, id, etc), la información de los participantes y vehículo, sería información complementaría que viajaría en otras peticiones, mediante otros servicios.</p>
+<p>Esta información no forma parte del recurso de cotización en sí, si no más bien son usados dentro de todo el proceso de lo que implica crear una cotización <em>(He ahí lo de que es un proceso de negocio, no un recurso exclusivamente aislado)</em>.</p>
+<p>Si lo vemos de un punto de vista arquitectural, esto podría respresentar un pequeña implementación de una arquitectura <strong>SOA</strong> o de <strong>Microservicios</strong>, la cual dicta que cada “servicio” es el único responsable de sus datos referentes a su recurso <em>(cumpliendo así el principio de cohesión)</em>.</p>
+<p>Esta separación de responsabilidades es debida a las bifuraciones del proceso de negocio del equipo de <em>Refactor</em>, dentro de su flujo, la información que <strong>completa</strong> una cotización dependerá del momento en el que cliente se encuentre dentro de su cotizador web <em>(esto es importantísimo)</em>, siendo así que las API’s seran llamadas en momentos distintos.</p>
+<p>Esto supone que la información es recopilada de forma <strong>no lineal</strong>, y no puede ser enviada toda de golpe <em>(ya que no existe)</em> generando <strong>dependencia</strong> entre nuestros recursos, dependencia que no existe en el API actual.</p>
+<p>Nuevamente, los llamados a las API’s dependerán exclusivamente del flujo que el cliente que este cotizando, <strong>decida seguir</strong>; pudiendo escoger entre varios flujos alternos y ahi es donde el API existente no puede seguir el ritmo.</p>
+<p>Al final, la información de todos los recursos aislados, completarán el móvil de este proyecto, crear una <strong>cotización</strong>.</p>
+<p>Es por eso, que el API productivo no es una opción viable debido a la naturaleza de la definición en la solución expuesta por el equipo de <em>Salesforce,</em> el flujo, tanto de los eventos como de las comunicaciones que deberían de hacerse para cumplir con el objetivo, presenta un puñado de diferencias en comparación de lo que se realiza en el cotizador actual.</p>
+<h2 id="conclusión">Conclusión</h2>
+<p>Si se optara por modificar el endpoint existente se supondría una labor de diseño y desarrollo mucho más extensa, agotadora y propensa con altas probabilidades a errores críticos.</p>
+<p>Ya que estaríamos dependiendo de que los clientes actuales del servicio quieran acoplarse al nuevo uso y diseño del API que les funcionaba estupendamente con anterioridad, esto escalaría a nivel de código para el cliente <em>(y dudo mucho que quieran hacer un cambio de esa índole)</em>, ya que habrá que modificar la forma en la que es llamado el API en sus piezas que lo esten consumiendo, inclusive, añadiríamos una complejidad bárbara a la hora de querer hacer pruebas.</p>
+<p>Además, estaríamos violando principios del buen diseño, provocando un descenso en la calidad de los servicios desarrollados en la organización <em>(y no queremos eso)</em>.</p>
+<p>Los principios no cumplidos serían los siguientes:</p>
+<blockquote>
+<p><strong>El software debe de ser cerrado a la modificación, pero abierto a la extensión.</strong></p>
+<p><strong>Las piezas de software deben de corresponder a una alta cohesión y un bajo acoplamiento</strong>.</p>
+</blockquote>
+<p>Por lo tanto, ambas opciones <em>“adaptar”</em> o <em>“extender”</em> la funcionalidad de la pieza solicitada quedarían descartadas, debido a que en teoría estaríamos modificando algo que ya se encuentra funcionando de manera óptima, no estamos extendiendo su <strong>funcionalidad</strong>.</p>
+<p>Al contrario, estaríamos potenciando la adquisición de incompatibilidades con los demás clientes, generando más conflictos y problemas que no existían en la premisa.</p>
+<p>Finalmente pero no menos importante, recalcar que en el departamento de <strong>ASO</strong> somos responsables de la excelencia y alta calidad de las piezas de software del banco, por lo que sería nuestra responsabilidad cumplirlos y generar la mejor solución posible.</p>
+</div>
+</body>
+
+</html>
